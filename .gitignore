@@ -1,0 +1,8 @@
+# Netflix Dashboard Git Ignore
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.log
+node_modules/
+.env

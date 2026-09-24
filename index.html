@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Netflix Content Analytics Dashboard - Interactive Business Intelligence analysis of Netflix catalog titles, genres, release trends, content types, countries, and audience ratings.">
+  <meta name="author" content="Ayush Shukla">
+  <title>Netflix Content Analytics Dashboard</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- Floating Custom Tooltip Element -->
+  <div id="dashboard-tooltip" role="tooltip" aria-hidden="true"></div>
+
+  <!-- Dashboard Main Header -->
+  <header class="dashboard-header" role="banner">
+    <div class="dashboard-container header-inner">
+      <div class="brand-section">
+        <div class="brand-icon-wrapper" aria-hidden="true">
+          <!-- Streaming analytics SVG icon -->
+          <svg viewBox="0 0 24 24">
+            <path d="M4 6h16v12H4z" fill="none" stroke="currentColor" stroke-width="2"/>
+            <path d="M10 9l5 3-5 3V9z"/>
+            <path d="M2 19h20M2 5h20" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div>
+          <h1 class="brand-title">Netflix Content Analytics <span class="accent">Dashboard</span></h1>
+          <p class="brand-subtitle">Interactive analysis of Netflix titles, content types, genres, countries, ratings, and release trends</p>
+        </div>
+      </div>
+
+      <div class="header-status-section">
+        <div class="dataset-badge" id="dataset-counter-badge">
+          <span class="status-dot"></span>
+          <span id="header-dataset-label">Netflix Dataset | <strong id="header-total-titles">8,790</strong> Titles</span>
+        </div>
+        <div class="validation-badge" id="header-validation-badge" title="Data Validation Status">
+          ✓ Validated: 8,790 Records | 4,275 Nulls | 0 Duplicates
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Layout -->
+  <main class="dashboard-container" role="main">
+
+    <!-- GLOBAL FILTERS SECTION -->
+    <section class="filter-panel" aria-label="Global Catalog Filters">
+      <div class="filter-panel-header">
+        <div class="filter-panel-title">
+          <svg viewBox="0 0 24 24"><path d="M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z"/></svg>
+          <span>Global Content Filters</span>
+          <span id="active-filter-count-badge" class="filter-chip" style="display:none;">0 Active</span>
+        </div>
+        <div class="filter-panel-actions">
+          <button id="btn-reset-filters" class="btn btn-danger" type="button" title="Reset all filters back to full dataset">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.65 6.35A7.958 7.958 0 0012 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0112 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+            Reset Filters
+          </button>
+        </div>
+      </div>
+
+      <!-- Quick Filter Presets -->
+      <div class="quick-presets-bar" aria-label="Filter Presets">
+        <span class="active-filters-label">Quick Presets:</span>
+        <button type="button" class="preset-chip active" data-preset="all">All Content</button>
+        <button type="button" class="preset-chip" data-preset="movies">Movies Only</button>
+        <button type="button" class="preset-chip" data-preset="tv">TV Shows Only</button>
+        <button type="button" class="preset-chip" data-preset="recent">Recent Releases (2018-2021)</button>
+        <button type="button" class="preset-chip" data-preset="classics">Classic Era (&lt;2000)</button>
+        <button type="button" class="preset-chip" data-preset="mature">Mature Audience (TV-MA / R)</button>
+        <button type="button" class="preset-chip" data-preset="family">Family Friendly (G / PG / TV-Y)</button>
+      </div>
+
+      <!-- Main Controls Filter Grid -->
+      <div class="filter-grid" style="margin-top: 1.25rem;">
+        <!-- Type Filter -->
+        <div class="filter-item">
+          <label class="filter-label" for="filter-type">Content Type</label>
+          <select id="filter-type" class="filter-select">
+            <option value="ALL">All Types (Movies & TV)</option>
+            <option value="Movie">Movies</option>
+            <option value="TV Show">TV Shows</option>
+          </select>
+        </div>
+
+        <!-- Rating Filter -->
+        <div class="filter-item">
+          <label class="filter-label" for="filter-rating">Maturity Rating</label>
+          <select id="filter-rating" class="filter-select">
+            <option value="ALL">All Ratings</option>
+          </select>
+        </div>
+
+        <!-- Country Filter -->
+        <div class="filter-item">
+          <label class="filter-label" for="filter-country">Country of Origin</label>
+          <select id="filter-country" class="filter-select">
+            <option value="ALL">All Countries</option>
+          </select>
+        </div>
+
+        <!-- Genre Filter -->
+        <div class="filter-item">
+          <label class="filter-label" for="filter-genre">Genre / Category</label>
+          <select id="filter-genre" class="filter-select">
+            <option value="ALL">All Genres</option>
+          </select>
+        </div>
+
+        <!-- Release Year Range -->
+        <div class="filter-item">
+          <label class="filter-label" for="filter-year-min">Release Year Span</label>
+          <div class="filter-range-group">
+            <select id="filter-year-min" class="filter-select" aria-label="Min Release Year"></select>
+            <span class="filter-range-sep">to</span>
+            <select id="filter-year-max" class="filter-select" aria-label="Max Release Year"></select>
+          </div>
+        </div>
+
+        <!-- Year Added Range -->
+        <div class="filter-item">
+          <label class="filter-label" for="filter-added-min">Date Added (Year)</label>
+          <div class="filter-range-group">
+            <select id="filter-added-min" class="filter-select" aria-label="Min Year Added"></select>
+            <span class="filter-range-sep">to</span>
+            <select id="filter-added-max" class="filter-select" aria-label="Max Year Added"></select>
+          </div>
+        </div>
+
+        <!-- Duration Bracket Filter -->
+        <div class="filter-item">
+          <label class="filter-label" for="filter-duration">Duration / Seasons</label>
+          <select id="filter-duration" class="filter-select">
+            <option value="ALL">All Durations</option>
+            <option value="MOV_SHORT">Movies: Short (&lt; 60 min)</option>
+            <option value="MOV_MEDIUM">Movies: Standard (60 - 110 min)</option>
+            <option value="MOV_LONG">Movies: Feature (110 - 150 min)</option>
+            <option value="MOV_EPIC">Movies: Epic (&gt; 150 min)</option>
+            <option value="TV_SINGLE">TV Shows: 1 Season (Limited/Miniseries)</option>
+            <option value="TV_MULTI">TV Shows: 2 - 3 Seasons</option>
+            <option value="TV_LONG">TV Shows: 4+ Seasons (Long-running)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Active Filter Tags Display -->
+      <div id="active-filters-container" class="active-filters-bar" style="display: none;">
+        <span class="active-filters-label">Active Filter Criteria:</span>
+        <div id="active-chips-list" style="display:inline-flex; flex-wrap:wrap; gap:0.5rem;"></div>
+      </div>
+    </section>
+
+    <!-- KPI OVERVIEW SECTION -->
+    <section class="kpi-section" aria-label="Key Performance Indicators">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title">
+            <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14h-2v-4h2v4zm0-6h-2V7h2v4zm4 6h-2v-7h2v7zm-8 0H6v-2h2v2z"/></svg>
+            Executive KPI Summary
+          </h2>
+          <p class="section-desc">High-level metrics dynamically computed across the currently filtered Netflix catalog</p>
+        </div>
+        <div id="kpi-filter-share" class="dataset-badge" style="font-size: 0.8rem;">
+          Showing 100% of Catalog
+        </div>
+      </div>
+
+      <div class="kpi-grid">
+        <!-- 1. Total Titles -->
+        <div class="kpi-card total" id="kpi-total-card">
+          <div class="kpi-header">
+            <span class="kpi-title">Catalog Titles</span>
+            <div class="kpi-icon">
+              <svg viewBox="0 0 24 24"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H8V4h12v12z"/></svg>
+            </div>
+          </div>
+          <div class="kpi-value" id="kpi-total-titles">8,790</div>
+          <div class="kpi-subtext" id="kpi-total-sub">100% of entire catalog</div>
+        </div>
+
+        <!-- 2. Movies -->
+        <div class="kpi-card movie" id="kpi-movies-card">
+          <div class="kpi-header">
+            <span class="kpi-title">Movies</span>
+            <div class="kpi-icon">
+              <svg viewBox="0 0 24 24"><path d="M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4z"/></svg>
+            </div>
+          </div>
+          <div class="kpi-value" id="kpi-movies-count" style="color: #f87171;">6,126</div>
+          <div class="kpi-subtext" id="kpi-movies-pct"><strong>69.7%</strong> of filtered titles</div>
+        </div>
+
+        <!-- 3. TV Shows -->
+        <div class="kpi-card tv" id="kpi-tv-card">
+          <div class="kpi-header">
+            <span class="kpi-title">TV Shows</span>
+            <div class="kpi-icon">
+              <svg viewBox="0 0 24 24"><path d="M21 3H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h5v2h8v-2h5c1.1 0 1.99-.9 1.99-2L23 5c0-1.1-.9-2-2-2zm0 14H3V5h18v12z"/></svg>
+            </div>
+          </div>
+          <div class="kpi-value" id="kpi-tv-count" style="color: #4ade80;">2,664</div>
+          <div class="kpi-subtext" id="kpi-tv-pct"><strong>30.3%</strong> of filtered titles</div>
+        </div>
+
+        <!-- 4. Unique Countries -->
+        <div class="kpi-card country">
+          <div class="kpi-header">
+            <span class="kpi-title">Countries</span>
+            <div class="kpi-icon">
+              <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+            </div>
+          </div>
+          <div class="kpi-value" id="kpi-countries-count">122</div>
+          <div class="kpi-subtext" id="kpi-countries-top">Top: <strong>United States</strong></div>
+        </div>
+
+        <!-- 5. Ratings & Maturity -->
+        <div class="kpi-card rating">
+          <div class="kpi-header">
+            <span class="kpi-title">Top Rating</span>
+            <div class="kpi-icon">
+              <svg viewBox="0 0 24 24"><path d="M12 2L1 21h22L12 2zm0 3.45l8.27 14.3H3.73L12 5.45zM11 10v4h2v-4h-2zm0 6v2h2v-2h-2z"/></svg>
+            </div>
+          </div>
+          <div class="kpi-value" id="kpi-top-rating">TV-MA</div>
+          <div class="kpi-subtext" id="kpi-top-rating-sub">3,205 titles (36.5%)</div>
+        </div>
+
+        <!-- 6. Movie Runtime / Seasons -->
+        <div class="kpi-card duration">
+          <div class="kpi-header">
+            <span class="kpi-title">Average Format</span>
+            <div class="kpi-icon">
+              <svg viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
+            </div>
+          </div>
+          <div class="kpi-value" id="kpi-avg-duration">99.6 min</div>
+          <div class="kpi-subtext" id="kpi-avg-seasons">TV Avg: <strong>1.75 Seasons</strong></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CONTENT TYPE ANALYSIS & TIME TRENDS (SECTIONS 1 & 2) -->
+    <div class="analytics-grid-two-col">
+      <!-- SECTION 1: Content Type Distribution -->
+      <div class="chart-card" id="card-type-distribution">
+        <div class="chart-card-header">
+          <div>
+            <h3 class="chart-card-title">
+              <svg viewBox="0 0 24 24"><path d="M11 2v20c-5.07-.5-9-4.79-9-10s3.93-9.5 9-10zm2 0v8.99L21.95 7.5C20.61 4.22 17.18 2 13 2zm0 11.01V22c4.18 0 7.61-2.22 8.95-5.5L13 13.01z"/></svg>
+              Content Type Ratio (Movies vs TV Shows)
+            </h3>
+            <p class="chart-card-subtitle">Proportion of Feature Films compared to Episodic Television Series</p>
+          </div>
+        </div>
+        <div class="chart-wrapper" id="chart-content-type-wrapper">
+          <svg id="chart-content-type" class="svg-chart" viewBox="0 0 360 280"></svg>
+        </div>
+        <div class="chart-legend" id="legend-content-type"></div>
+      </div>
+
+      <!-- SECTION 2: Titles Added Over Time -->
+      <div class="chart-card" id="card-added-time">
+        <div class="chart-card-header">
+          <div>
+            <h3 class="chart-card-title">
+              <svg viewBox="0 0 24 24"><path d="M3.5 18.49l6-6.01 4 4L22 6.92l-1.41-1.41-7.09 7.97-4-4L2 16.99z"/></svg>
+              Catalog Expansion: Titles Added Per Year
+            </h3>
+            <p class="chart-card-subtitle">Volume of new content ingestion onto Netflix from 2008 to 2021</p>
+          </div>
+          <div class="chart-controls">
+            <button type="button" class="chart-btn-toggle active" data-time-mode="total">Combined</button>
+            <button type="button" class="chart-btn-toggle" data-time-mode="split">Split by Type</button>
+          </div>
+        </div>
+        <div class="chart-wrapper" id="chart-added-time-wrapper">
+          <svg id="chart-added-time" class="svg-chart" viewBox="0 0 540 280"></svg>
+        </div>
+        <div class="chart-legend" id="legend-added-time"></div>
+      </div>
+    </div>
+
+    <!-- RELEASE ERA DISTRIBUTION & RATINGS ANALYSIS (SECTIONS 3 & 6) -->
+    <div class="analytics-grid-two-col">
+      <!-- SECTION 3: Release Year Distribution -->
+      <div class="chart-card">
+        <div class="chart-card-header">
+          <div>
+            <h3 class="chart-card-title">
+              <svg viewBox="0 0 24 24"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2z"/></svg>
+              Release Year Distribution
+            </h3>
+            <p class="chart-card-subtitle">Production vintage of titles, showing historical archives vs modern explosion</p>
+          </div>
+        </div>
+        <div class="chart-wrapper" id="chart-release-year-wrapper">
+          <svg id="chart-release-year" class="svg-chart" viewBox="0 0 540 280"></svg>
+        </div>
+      </div>
+
+      <!-- SECTION 6: Ratings Analysis -->
+      <div class="chart-card">
+        <div class="chart-card-header">
+          <div>
+            <h3 class="chart-card-title">
+              <svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg>
+              Audience Maturity Ratings Breakdown
+            </h3>
+            <p class="chart-card-subtitle">Distribution across official TV and Motion Picture Association ratings</p>
+          </div>
+        </div>
+        <div class="chart-wrapper" id="chart-ratings-wrapper">
+          <svg id="chart-ratings" class="svg-chart" viewBox="0 0 540 280"></svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- TOP GENRES & GENRE BY CONTENT TYPE (SECTIONS 4 & 9) -->
+    <div class="analytics-grid-two-col">
+      <!-- SECTION 4: Top Genres -->
+      <div class="chart-card">
+        <div class="chart-card-header">
+          <div>
+            <h3 class="chart-card-title">
+              <svg viewBox="0 0 24 24"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H8V4h12v12z"/></svg>
+              Top 12 Content Genres
+            </h3>
+            <p class="chart-card-subtitle">Most prevalent genres (multi-genre entries separated for accurate aggregation)</p>
+          </div>
+        </div>
+        <div class="chart-wrapper tall" id="chart-top-genres-wrapper">
+          <svg id="chart-top-genres" class="svg-chart" viewBox="0 0 540 380"></svg>
+        </div>
+      </div>
+
+      <!-- SECTION 9: Genre x Content Type -->
+      <div class="chart-card">
+        <div class="chart-card-header">
+          <div>
+            <h3 class="chart-card-title">
+              <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>
+              Genre × Content Type Association
+            </h3>
+            <p class="chart-card-subtitle">Movies vs TV Shows composition across the leading 10 categories</p>
+          </div>
+        </div>
+        <div class="chart-wrapper tall" id="chart-genre-type-wrapper">
+          <svg id="chart-genre-type" class="svg-chart" viewBox="0 0 540 380"></svg>
+        </div>
+        <div class="chart-legend" id="legend-genre-type"></div>
+      </div>
+    </div>
+
+    <!-- TOP COUNTRIES & COUNTRY BY CONTENT TYPE (SECTIONS 5 & 10) -->
+    <div class="analytics-grid-two-col">
+      <!-- SECTION 5: Top Countries -->
+      <div class="chart-card">
+        <div class="chart-card-header">
+          <div>
+            <h3 class="chart-card-title">
+              <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+              Top Producing Nations
+            </h3>
+            <p class="chart-card-subtitle">Leading content producer countries (multi-country co-productions split and counted)</p>
+          </div>
+        </div>
+        <div class="chart-wrapper tall" id="chart-top-countries-wrapper">
+          <svg id="chart-top-countries" class="svg-chart" viewBox="0 0 540 380"></svg>
+        </div>
+        <p style="font-size:0.75rem; color:var(--text-muted); margin-top:0.5rem; text-align:center;">
+          * Note: International co-productions involving multiple countries are counted for each partner country.
+        </p>
+      </div>
+
+      <!-- SECTION 10: Country x Content Type -->
+      <div class="chart-card">
+        <div class="chart-card-header">
+          <div>
+            <h3 class="chart-card-title">
+              <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>
+              Country × Content Type Mix
+            </h3>
+            <p class="chart-card-subtitle">Domestic vs TV Series focus across top content producing nations</p>
+          </div>
+        </div>
+        <div class="chart-wrapper tall" id="chart-country-type-wrapper">
+          <svg id="chart-country-type" class="svg-chart" viewBox="0 0 540 380"></svg>
+        </div>
+        <div class="chart-legend" id="legend-country-type"></div>
+      </div>
+    </div>
+
+    <!-- DURATION & SEASON ANALYSIS (SECTIONS 7 & 8) -->
+    <div class="analytics-grid-two-col">
+      <!-- SECTION 7: Movie Duration Analysis -->
+      <div class="chart-card">
+        <div class="chart-card-header">
+          <div>
+            <h3 class="chart-card-title">
+              <svg viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
+              Movie Duration Distribution (Minutes)
+            </h3>
+            <p class="chart-card-subtitle">Distribution of feature film runtimes across standard duration brackets</p>
+          </div>
+          <div id="movie-duration-badge" class="td-rating-badge">Avg: 99.6 min</div>
+        </div>
+        <div class="chart-wrapper" id="chart-movie-duration-wrapper">
+          <svg id="chart-movie-duration" class="svg-chart" viewBox="0 0 540 280"></svg>
+        </div>
+      </div>
+
+      <!-- SECTION 8: TV Show Seasons Analysis -->
+      <div class="chart-card">
+        <div class="chart-card-header">
+          <div>
+            <h3 class="chart-card-title">
+              <svg viewBox="0 0 24 24"><path d="M21 3H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h5v2h8v-2h5c1.1 0 1.99-.9 1.99-2L23 5c0-1.1-.9-2-2-2zm0 14H3V5h18v12z"/></svg>
+              TV Show Season Lifespan
+            </h3>
+            <p class="chart-card-subtitle">Series continuation rate illustrating single-season vs multi-season renewals</p>
+          </div>
+          <div id="tv-season-badge" class="td-rating-badge">Avg: 1.75 Seasons</div>
+        </div>
+        <div class="chart-wrapper" id="chart-tv-seasons-wrapper">
+          <svg id="chart-tv-seasons" class="svg-chart" viewBox="0 0 540 280"></svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- ADVANCED ANALYTICS (SECTION 10: GROWTH VELOCITY) -->
+    <div class="analytics-full-col">
+      <div class="chart-card">
+        <div class="chart-card-header">
+          <div>
+            <h3 class="chart-card-title">
+              <svg viewBox="0 0 24 24"><path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"/></svg>
+              Catalog Growth Velocity & Year-over-Year Trajectory
+            </h3>
+            <p class="chart-card-subtitle">Historical cumulative catalog scale and annual expansion momentum</p>
+          </div>
+        </div>
+        <div class="chart-wrapper" id="chart-growth-trajectory-wrapper" style="height: 280px;">
+          <svg id="chart-growth-trajectory" class="svg-chart" viewBox="0 0 1080 260"></svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONTENT EXPLORER (INTERACTIVE DATA TABLE) -->
+    <section class="table-card" aria-label="Interactive Content Explorer">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title">
+            <svg viewBox="0 0 24 24"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg>
+            Netflix Content Explorer
+          </h2>
+          <p class="section-desc">Search, sort, filter, and inspect detailed records from the active catalog</p>
+        </div>
+        <div class="table-actions">
+          <button id="btn-export-csv" class="btn btn-secondary" type="button" title="Download current filtered dataset as CSV">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+            Export CSV
+          </button>
+          <button id="btn-export-json" class="btn btn-secondary" type="button" title="Download current filtered dataset as JSON">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+            Export JSON
+          </button>
+        </div>
+      </div>
+
+      <!-- Table Search & Controls Toolbar -->
+      <div class="table-toolbar">
+        <div class="search-box-wrapper">
+          <svg class="search-box-icon" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+          <input type="text" id="table-search-input" class="search-input" placeholder="Search by title, genre, country, cast, director..." aria-label="Search content">
+          <button type="button" id="table-search-clear" class="search-clear-btn" aria-label="Clear search">&times;</button>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 1rem;">
+          <div class="table-results-count" id="table-results-summary">Showing 1 - 25 of 8,790 titles</div>
+          <div style="display:flex; align-items:center; gap:0.5rem;">
+            <label for="table-page-size" style="font-size:0.8rem; color:var(--text-muted);">Rows:</label>
+            <select id="table-page-size" class="filter-select" style="width: auto; padding: 0.35rem 0.6rem;">
+              <option value="10">10</option>
+              <option value="25" selected>25</option>
+              <option value="50">50</option>
+              <option value="100">100</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Scrollable Data Table Container -->
+      <div class="table-scroll-container">
+        <table class="data-table" id="content-table" aria-label="Netflix titles list">
+          <thead>
+            <tr>
+              <th data-sort="title" style="min-width: 220px;">Title <span class="sort-indicator" id="sort-title"></span></th>
+              <th data-sort="type" style="width: 100px;">Type <span class="sort-indicator" id="sort-type"></span></th>
+              <th data-sort="release_year" style="width: 110px;">Release <span class="sort-indicator" id="sort-release_year"></span></th>
+              <th data-sort="rating" style="width: 90px;">Rating <span class="sort-indicator" id="sort-rating"></span></th>
+              <th data-sort="country" style="min-width: 160px;">Country <span class="sort-indicator" id="sort-country"></span></th>
+              <th data-sort="date_added" style="min-width: 140px;">Date Added <span class="sort-indicator" id="sort-date_added"></span></th>
+              <th data-sort="duration_raw" style="width: 110px;">Duration <span class="sort-indicator" id="sort-duration_raw"></span></th>
+              <th data-sort="listed_in" style="min-width: 220px;">Genres <span class="sort-indicator" id="sort-listed_in"></span></th>
+            </tr>
+          </thead>
+          <tbody id="table-body">
+            <!-- Dynamically populated rows -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination Footer -->
+      <div class="table-pagination">
+        <div class="pagination-info" id="pagination-page-indicator">Page 1 of 352</div>
+        <div class="pagination-controls" id="pagination-controls-bar"></div>
+      </div>
+    </section>
+
+    <!-- DYNAMIC BUSINESS INSIGHTS SECTION (SECTION 9) -->
+    <section class="insights-section" aria-label="Key Business Insights">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title">
+            <svg viewBox="0 0 24 24"><path d="M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7zm2.85 11.1l-.85.6V16h-4v-2.3l-.85-.6C7.8 12.16 7 10.63 7 9c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.63-.8 3.16-2.15 4.1z"/></svg>
+            Key Business & Catalog Insights
+          </h2>
+          <p class="section-desc">Automated executive intelligence generated dynamically from the active filtered slice</p>
+        </div>
+      </div>
+
+      <div class="insights-grid" id="insights-container">
+        <!-- Dynamically injected insight cards -->
+      </div>
+    </section>
+
+  </main>
+
+  <!-- TITLE DETAILS MODAL INSPECTOR -->
+  <div id="title-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="modal-container">
+      <div class="modal-header">
+        <button id="modal-close-btn" class="modal-close-btn" type="button" aria-label="Close details">&times;</button>
+        <h3 class="modal-title" id="modal-title-text">Title Details</h3>
+        <div class="modal-meta-row" id="modal-meta-row"></div>
+      </div>
+      <div class="modal-body">
+        <div class="modal-synopsis" id="modal-synopsis-text"></div>
+        <div class="modal-detail-grid" id="modal-details-grid"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PORTFOLIO READY FOOTER -->
+  <footer class="dashboard-footer" role="contentinfo">
+    <div class="dashboard-container">
+      <p class="footer-text" id="footer-text">
+        Netflix Content Analytics Dashboard • Data Analytics Portfolio Project • Built with Vanilla JavaScript, SVG &amp; CSS3 • All 8,790 Records Loaded &amp; Validated
+      </p>
+      <p class="footer-credits">
+        Curated &amp; Designed by <strong>Ayush Shukla</strong> • B.Tech Computer Science &amp; Engineering (AI &amp; ML), Adani University (2028)
+      </p>
+    </div>
+  </footer>
+
+  <!-- Pre-bundled Data and Application Logic -->
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
